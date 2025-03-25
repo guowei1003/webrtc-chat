@@ -5,52 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC 点对点通信</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
 </head>
 <body>
     <div class="app">
+        <header>
+            <h1 class="app-title">WebRTC聊天应用</h1>
+        </header>
+        
         <nav class="nav">
-            <a href="#home" class="nav-item active" data-page="home">主页</a>
-            <a href="#chat" class="nav-item" data-page="chat">聊天</a>
-            <a href="#settings" class="nav-item" data-page="settings">设置</a>
+            <a href="#home" class="nav-item active" data-page="home"><i class="fas fa-home"></i> 主页</a>
+            <a href="#chat" class="nav-item" data-page="chat"><i class="fas fa-comments"></i> 聊天</a>
+            <a href="#settings" class="nav-item" data-page="settings"><i class="fas fa-cog"></i> 设置</a>
         </nav>
         
         <div id="home" class="page active">
             <div class="profile">
                 <div class="nickname">
+                    <span class="label">当前昵称:</span>
                     <span id="currentNickname"></span>
-                    <button id="changeNickname">修改昵称</button>
+                    <button id="changeNickname"><i class="fas fa-edit"></i> 修改昵称</button>
                 </div>
             </div>
             <div class="connection">
-                <button id="generateCode">生成连接码</button>
+                <h2 class="section-title">创建连接</h2>
+                <button id="generateCode"><i class="fas fa-qrcode"></i> 生成连接码</button>
                 <div class="code-container">
                     <textarea id="connectionCode" readonly></textarea>
-                    <button id="copyCode">复制</button>
+                    <button id="copyCode"><i class="fas fa-copy"></i> 复制</button>
                 </div>
+                
+                <div class="connection-helper">
+                    <div class="helper-title">使用说明</div>
+                    <a href="#" class="connection-helper-link" id="helpSendCode"><i class="fas fa-share-square"></i> 将连接码发送给对方</a>
+                    <a href="#" class="connection-helper-link" id="helpRecipient"><i class="fas fa-user-plus"></i> 等待对方连接，接受连接</a>
+                    <a href="#" class="connection-helper-link" id="helpCopyPaste"><i class="fas fa-paste"></i> 对方的应答码粘贴到下方</a>
+                </div>
+                
+                <h2 class="section-title">加入聊天</h2>
                 <div class="connect-container">
                     <textarea id="peerCode" placeholder="请输入对方的连接码"></textarea>
-                    <button id="connect">连接</button>
+                    <button id="connect"><i class="fas fa-plug"></i> 连接</button>
+                </div>
+                <div class="connection-tip">
+                    <i class="fas fa-info-circle"></i>
+                    <span>输入对方分享的连接码，点击"连接"按钮发起聊天</span>
                 </div>
             </div>
         </div>
 
         <div id="chat" class="page">
             <div class="contacts">
+                <div class="contacts-header">
+                    <h3>联系人</h3>
+                </div>
                 <ul id="contactList"></ul>
             </div>
             <div class="chat-container">
+                <div class="chat-header">
+                    <h3 id="currentContact">选择一个联系人开始聊天</h3>
+                </div>
                 <div id="messages" class="messages"></div>
                 <div class="input-area">
                     <input type="file" id="fileInput" multiple style="display: none">
-                    <button id="attachFile">附件</button>
+                    <button id="attachFile" title="添加附件"></button>
                     <textarea id="messageInput" placeholder="输入消息..."></textarea>
-                    <button id="sendMessage">发送</button>
+                    <button id="sendMessage" title="发送"></button>
                 </div>
             </div>
         </div>
 
         <div id="settings" class="page">
-            <button id="clearCache">清理缓存</button>
+            <h2 class="section-title">应用设置</h2>
+            <div class="settings-section">
+                <h3>数据管理</h3>
+                <p class="settings-description">清理本地存储的所有聊天记录和用户数据</p>
+                <button id="clearCache"><i class="fas fa-trash"></i> 清理缓存</button>
+            </div>
+            <div class="settings-section">
+                <h3>关于</h3>
+                <p class="settings-description">WebRTC点对点通信应用 - 版本 1.0</p>
+                <p class="settings-description">基于Web技术的点对点加密通信，无需服务器存储聊天内容</p>
+            </div>
         </div>
     </div>
 
