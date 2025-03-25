@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC 点对点通信</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app">
+        <nav class="nav">
+            <a href="#home" class="nav-item active" data-page="home">主页</a>
+            <a href="#chat" class="nav-item" data-page="chat">聊天</a>
+            <a href="#settings" class="nav-item" data-page="settings">设置</a>
+        </nav>
+        
+        <div id="home" class="page active">
+            <div class="profile">
+                <div class="nickname">
+                    <span id="currentNickname"></span>
+                    <button id="changeNickname">修改昵称</button>
+                </div>
+            </div>
+            <div class="connection">
+                <button id="generateCode">生成连接码</button>
+                <div class="code-container">
+                    <textarea id="connectionCode" readonly></textarea>
+                    <button id="copyCode">复制</button>
+                </div>
+                <div class="connect-container">
+                    <textarea id="peerCode" placeholder="请输入对方的连接码"></textarea>
+                    <button id="connect">连接</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat" class="page">
+            <div class="contacts">
+                <ul id="contactList"></ul>
+            </div>
+            <div class="chat-container">
+                <div id="messages" class="messages"></div>
+                <div class="input-area">
+                    <input type="file" id="fileInput" multiple style="display: none">
+                    <button id="attachFile">附件</button>
+                    <textarea id="messageInput" placeholder="输入消息..."></textarea>
+                    <button id="sendMessage">发送</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings" class="page">
+            <button id="clearCache">清理缓存</button>
+        </div>
+    </div>
+
+    <script src="js/db.js"></script>
+    <script src="js/webrtc.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html> 
