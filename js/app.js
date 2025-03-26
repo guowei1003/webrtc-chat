@@ -120,6 +120,32 @@ class App {
         // WebRTC事件
         webrtc.setOnMessage((message) => this.handleIncomingMessage(message));
         webrtc.setOnConnectionStateChange((state) => this.handleConnectionStateChange(state));
+
+        // 联系人切换
+        this.contactsToggle = document.getElementById('contactsToggle');
+        this.closeContacts = document.querySelector('.close-contacts');
+        this.contactsPanel = document.querySelector('.contacts');
+
+        if (this.contactsToggle) {
+            this.contactsToggle.addEventListener('click', () => {
+                this.contactsPanel.classList.add('active');
+            });
+        }
+
+        if (this.closeContacts) {
+            this.closeContacts.addEventListener('click', () => {
+                this.contactsPanel.classList.remove('active');
+            });
+        }
+
+        // 点击联系人后在移动端自动关闭联系人列表
+        document.querySelectorAll('.contact-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    this.contactsPanel.classList.remove('active');
+                }
+            });
+        });
     }
 
     switchPage(pageId) {
@@ -163,11 +189,29 @@ class App {
 
     async generateConnectionCode() {
         try {
+            // 移除先前的提示（如果存在）
+            const existingPrompt = document.querySelector('.answer-prompt');
+            if (existingPrompt) {
+                existingPrompt.remove();
+            }
+            
+            // 移除先前的应答码容器（如果存在）
+            const existingAnswerContainer = document.querySelector('.answer-code-container');
+            if (existingAnswerContainer) {
+                existingAnswerContainer.remove();
+            }
+            
             // 使用保存的昵称
             const connectionCode = await webrtc.createOffer({
                 nickname: this.nickname
             });
             this.connectionCodeArea.value = connectionCode;
+
+            // 自动复制连接码到剪贴板
+            this.copyToClipboard(connectionCode, this.copyCodeBtn);
+            
+            // 显示提示
+            this.showToast('连接码已自动复制到剪贴板');
 
             // 显示应答码输入区域
             this.answerInput.style.display = 'block';
@@ -192,23 +236,7 @@ class App {
             return;
         }
 
-        this.connectionCodeArea.select();
-        try {
-            // 尝试使用新API
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(this.connectionCodeArea.value);
-            } else {
-                // 回退到旧方法
-                document.execCommand('copy');
-            }
-            this.copyCodeBtn.textContent = '已复制';
-            setTimeout(() => {
-                this.copyCodeBtn.textContent = '复制';
-            }, 2000);
-        } catch (error) {
-            console.error('复制失败:', error);
-            alert('复制失败，请手动复制');
-        }
+        this.copyToClipboard(this.connectionCodeArea.value, this.copyCodeBtn);
     }
 
     async connectToPeer() {
@@ -234,6 +262,12 @@ class App {
                 throw new Error('用户取消连接');
             }
 
+            // 移除先前的应答码容器（如果存在）
+            const existingAnswerContainer = document.querySelector('.answer-code-container');
+            if (existingAnswerContainer) {
+                existingAnswerContainer.remove();
+            }
+
             // 接受连接请求并生成应答
             const answer = await webrtc.acceptOffer(connectionData);
 
@@ -256,14 +290,36 @@ class App {
             const answerString = `${base64String}.${checksum}`;
 
             // 显示应答码
+            const answerAreaContainer = document.createElement('div');
+            answerAreaContainer.className = 'answer-code-container';
+
+            const answerHeader = document.createElement('div');
+            answerHeader.className = 'answer-code-header';
+            answerHeader.innerHTML = '<i class="fas fa-check-circle"></i> 应答码已生成';
+            
             const answerArea = document.createElement('textarea');
             answerArea.className = 'answer-code';
             answerArea.value = answerString;
             answerArea.readOnly = true;
-            this.peerCodeArea.parentNode.appendChild(answerArea);
 
-            // 提示用户将应答码发送给对方
-            alert('请将此应答码发送给对方以完成连接');
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-answer-btn';
+            copyButton.innerHTML = '<i class="fas fa-copy"></i> 复制应答码';
+            copyButton.addEventListener('click', () => {
+                this.copyToClipboard(answerString, copyButton);
+            });
+
+            answerAreaContainer.appendChild(answerHeader);
+            answerAreaContainer.appendChild(answerArea);
+            answerAreaContainer.appendChild(copyButton);
+            
+            this.peerCodeArea.parentNode.appendChild(answerAreaContainer);
+
+            // 自动复制到剪贴板
+            this.copyToClipboard(answerString, copyButton);
+
+            // 显示成功提示
+            this.showToast('应答码已自动复制到剪贴板');
 
             // 保存联系人信息
             const contact = {
@@ -353,12 +409,53 @@ class App {
             const contacts = await db.getAllContacts();
             this.contactList.innerHTML = '';
             
+            // 空联系人状态显示控制
+            const emptyContactList = document.getElementById('emptyContactList');
+            if (contacts.length === 0) {
+                if (emptyContactList) emptyContactList.style.display = 'flex';
+            } else {
+                if (emptyContactList) emptyContactList.style.display = 'none';
+            }
+            
             contacts.forEach(contact => {
                 const li = document.createElement('li');
                 li.className = 'contact-item';
-                li.textContent = contact.nickname;
+                
+                // 联系人名称
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'contact-item-name';
+                nameSpan.textContent = contact.nickname;
+                li.appendChild(nameSpan);
+                
+                // 联系人操作区域
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'contact-item-actions';
+                
+                // 删除按钮
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-contact';
+                deleteBtn.title = '删除联系人';
+                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止冒泡，避免触发选中联系人
+                    this.showDeleteConfirm(contact.id, contact.nickname);
+                });
+                actionsDiv.appendChild(deleteBtn);
+                
+                li.appendChild(actionsDiv);
+                
+                // 点击整个联系人项目选中联系人
                 li.addEventListener('click', () => this.selectContact(contact.id));
                 this.contactList.appendChild(li);
+
+                // 在移动端点击联系人后自动关闭联系人面板
+                if (window.innerWidth <= 768) {
+                    li.addEventListener('click', () => {
+                        if (this.contactsPanel) {
+                            this.contactsPanel.classList.remove('active');
+                        }
+                    });
+                }
             });
         } catch (error) {
             console.error('加载联系人失败:', error);
@@ -580,6 +677,163 @@ class App {
                 alert('清除缓存失败，请重试');
             }
         }
+    }
+
+    // 添加删除确认对话框方法
+    showDeleteConfirm(contactId, contactName) {
+        // 检查是否已存在确认对话框，如果有则先移除
+        const existingConfirm = document.querySelector('.delete-confirm');
+        if (existingConfirm) {
+            existingConfirm.remove();
+        }
+        
+        // 创建确认对话框
+        const confirmDialog = document.createElement('div');
+        confirmDialog.className = 'delete-confirm';
+        confirmDialog.innerHTML = `
+            <div class="delete-confirm-content">
+                <p>确定要删除联系人"${contactName}"吗？这将同时断开与该联系人的连接。</p>
+                <div class="delete-confirm-actions">
+                    <button class="cancel-delete">取消</button>
+                    <button class="confirm-delete">删除</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(confirmDialog);
+        
+        // 绑定取消按钮事件
+        confirmDialog.querySelector('.cancel-delete').addEventListener('click', () => {
+            confirmDialog.remove();
+        });
+        
+        // 绑定确认按钮事件
+        confirmDialog.querySelector('.confirm-delete').addEventListener('click', async () => {
+            await this.deleteContact(contactId);
+            confirmDialog.remove();
+        });
+    }
+
+    // 删除联系人方法
+    async deleteContact(contactId) {
+        try {
+            // 从IndexedDB中删除联系人
+            await this.db.deleteContact(contactId);
+            
+            // 如果删除的是当前选中的联系人，清空聊天区域
+            if (this.currentContact && this.currentContact.id === contactId) {
+                this.currentContact = null;
+                this.clearChatArea();
+                document.querySelector('.chat-container').classList.add('empty');
+                document.getElementById('chat-title').textContent = '选择联系人开始聊天';
+            }
+            
+            // 断开与该联系人的WebRTC连接
+            if (this.peerConnections[contactId]) {
+                if (this.peerConnections[contactId].connection) {
+                    this.peerConnections[contactId].connection.close();
+                }
+                delete this.peerConnections[contactId];
+            }
+            
+            // 更新UI，移除该联系人
+            this.loadContacts();
+            
+            // 显示成功提示
+            this.showToast('联系人已成功删除');
+        } catch (error) {
+            console.error('删除联系人失败:', error);
+            this.showToast('删除联系人失败，请重试');
+        }
+    }
+
+    // 清空聊天区域
+    clearChatArea() {
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.innerHTML = '';
+        
+        // 显示空聊天提示
+        const emptyChat = document.createElement('div');
+        emptyChat.className = 'empty-chat-message';
+        emptyChat.textContent = '选择联系人开始聊天';
+        messagesContainer.appendChild(emptyChat);
+    }
+
+    // 显示Toast提示
+    showToast(message) {
+        // 删除现有的toast
+        const existingToast = document.querySelector('.toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        // 创建新的toast
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        // 自动移除toast
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 1500);
+    }
+
+    // 复制文本到剪贴板
+    copyToClipboard(text, button) {
+        // 先尝试使用现代API
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    if (button) {
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '<i class="fas fa-check"></i> 已复制';
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                        }, 2000);
+                    }
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                    this.copyToClipboardFallback(text, button);
+                });
+        } else {
+            // 回退到传统方法
+            this.copyToClipboardFallback(text, button);
+        }
+    }
+
+    // 复制到剪贴板的后备方法
+    copyToClipboardFallback(text, button) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                if (button) {
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-check"></i> 已复制';
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                    }, 2000);
+                }
+            } else {
+                console.error('复制失败');
+            }
+        } catch (err) {
+            console.error('复制出错:', err);
+        }
+        
+        document.body.removeChild(textArea);
     }
 }
 

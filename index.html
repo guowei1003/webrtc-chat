@@ -14,9 +14,9 @@
         </header>
         
         <nav class="nav">
-            <a href="#home" class="nav-item active" data-page="home"><i class="fas fa-home"></i> 主页</a>
-            <a href="#chat" class="nav-item" data-page="chat"><i class="fas fa-comments"></i> 聊天</a>
-            <a href="#settings" class="nav-item" data-page="settings"><i class="fas fa-cog"></i> 设置</a>
+            <a href="#home" class="nav-item active" data-page="home"><i class="fas fa-home"></i> <span>主页</span></a>
+            <a href="#chat" class="nav-item" data-page="chat"><i class="fas fa-comments"></i> <span>聊天</span></a>
+            <a href="#settings" class="nav-item" data-page="settings"><i class="fas fa-cog"></i> <span>设置</span></a>
         </nav>
         
         <div id="home" class="page active">
@@ -24,7 +24,7 @@
                 <div class="nickname">
                     <span class="label">当前昵称:</span>
                     <span id="currentNickname"></span>
-                    <button id="changeNickname"><i class="fas fa-edit"></i> 修改昵称</button>
+                    <button id="changeNickname"><i class="fas fa-edit"></i> 切换昵称</button>
                 </div>
             </div>
             <div class="connection">
@@ -37,7 +37,7 @@
                 
                 <div class="connection-helper">
                     <div class="helper-title">使用说明</div>
-                    <a href="#" class="connection-helper-link" id="helpSendCode"><i class="fas fa-share-square"></i> 将连接码发送给对方</a>
+                    <a href="#" class="connection-helper-link" id="helpSendCode"><i class="fas fa-share-square"></i> 生成连接码，将连接码发送给对方</a>
                     <a href="#" class="connection-helper-link" id="helpRecipient"><i class="fas fa-user-plus"></i> 等待对方连接，接受连接</a>
                     <a href="#" class="connection-helper-link" id="helpCopyPaste"><i class="fas fa-paste"></i> 对方的应答码粘贴到下方</a>
                 </div>
@@ -58,19 +58,46 @@
             <div class="contacts">
                 <div class="contacts-header">
                     <h3>联系人</h3>
+                    <button class="close-contacts icon-button" title="关闭">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
                 <ul id="contactList"></ul>
+                <div class="empty-state" id="emptyContactList" style="display: none;">
+                    <i class="fas fa-user-friends empty-state-icon"></i>
+                    <div class="empty-state-title">还没有联系人</div>
+                    <div class="empty-state-subtitle">回到主页创建连接或加入聊天</div>
+                </div>
             </div>
             <div class="chat-container">
                 <div class="chat-header">
+                    <button id="contactsToggle" class="contacts-toggle icon-button" title="显示联系人">
+                        <i class="fas fa-users"></i>
+                    </button>
                     <h3 id="currentContact">选择一个联系人开始聊天</h3>
+                    <div class="chat-actions">
+                        <button id="refreshChat" title="刷新消息" class="icon-button">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
                 </div>
                 <div id="messages" class="messages"></div>
+                <div class="empty-state" id="emptyMessages" style="display: none;">
+                    <i class="fas fa-comments empty-state-icon"></i>
+                    <div class="empty-state-title">暂无消息</div>
+                    <div class="empty-state-subtitle">开始发送消息吧</div>
+                </div>
                 <div class="input-area">
                     <input type="file" id="fileInput" multiple style="display: none">
-                    <button id="attachFile" title="添加附件"></button>
+                    <button id="attachFile" title="添加附件">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
                     <textarea id="messageInput" placeholder="输入消息..."></textarea>
-                    <button id="sendMessage" title="发送"></button>
+                    <div class="input-area-buttons">
+                        <button id="sendMessage" title="发送">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
